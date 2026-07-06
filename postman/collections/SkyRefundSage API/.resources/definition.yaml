@@ -1,0 +1,23 @@
+$kind: collection
+name: SkyRefundSage API
+description: |-
+  API collection for the SkyRefundSage airline refund management system.
+  Handles refund submissions, workflow management, airline administration,
+  user management, and AI analysis.
+variables:
+  - key: base_url
+    value: 'http://localhost:8000'
+  - key: token
+    value: ''
+  - key: refund_id
+    value: '1'
+  - key: reference
+    value: REF-001
+  - key: airline_id
+    value: '1'
+  - key: user_id
+    value: '1'
+  - key: attachment_id
+    value: '1'
+  - key: ticket_id
+    value: '1'

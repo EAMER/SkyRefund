@@ -1,0 +1,3 @@
+$kind: collection
+name: Refund Tickets
+description: Endpoints for managing support tickets associated with refunds

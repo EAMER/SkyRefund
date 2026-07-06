@@ -1,0 +1,3 @@
+$kind: collection
+name: Refund Attachments
+description: Endpoints for managing file attachments on refund submissions
