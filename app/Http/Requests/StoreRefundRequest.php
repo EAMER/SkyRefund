@@ -6,13 +6,30 @@ use App\Enums\AttachmentType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
-
 class StoreRefundRequest extends FormRequest
-{  
+{
+    /**
+     * Prepare the data for validation.
+     */
     protected function prepareForValidation(): void
     {
-    dd($this->all());
+        // Uncomment only when debugging
+        /*
+        dd([
+            'all' => $this->all(),
+            'files' => $this->allFiles(),
+            'content_type' => $this->header('Content-Type'),
+        ]);
+        */
+
+        // Convert checkbox value to boolean
+        if ($this->has('consent')) {
+            $this->merge([
+                'consent' => filter_var($this->input('consent'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
     }
+
     /**
      * Determine if the user is authorized.
      */
@@ -20,7 +37,7 @@ class StoreRefundRequest extends FormRequest
     {
         return true;
     }
-    
+
     /**
      * Validation rules.
      */
@@ -78,7 +95,7 @@ class StoreRefundRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'consent' => ['required' , 'boolean'],
+            'consent' => ['required', 'boolean'],
 
             /*
             |--------------------------------------------------------------------------
@@ -110,14 +127,40 @@ class StoreRefundRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
+            'attachments' => ['nullable', 'array'],
+
+            'attachments.*' => [
+                'file',
+                'max:10240', // 10MB
+            ],
+
             'attachment_types' => ['nullable', 'array'],
 
-                'attachment_types.*' => [
-                    'required_with:attachments',
-                    'string',
-                    'in:signature,passenger_id,account_holder_id,authorization_letter,other',
-                    //new Enum(AttachmentType::class),
-                ],
+            'attachment_types.*' => [
+                'required_with:attachments',
+                new Enum(AttachmentType::class),
+            ],
+        ];
+    }
+
+    /**
+     * Custom validation messages.
+     */
+    public function messages(): array
+    {
+        return [
+            'attachments.array' => 'Attachments must be an array.',
+
+            'attachments.*.file' => 'Each attachment must be a valid file.',
+
+            'attachments.*.max' => 'Each attachment must not exceed 10MB.',
+
+            'attachment_types.array' => 'Attachment types must be an array.',
+
+            'attachment_types.*.required_with' =>
+                'Each attachment must have a corresponding attachment type.',
+
+            'consent.required' => 'You must accept the consent.',
         ];
     }
 }
