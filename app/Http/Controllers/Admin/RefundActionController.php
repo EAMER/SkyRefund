@@ -4,17 +4,21 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Refund;
-use App\Enums\RefundStatus;
+use App\Services\RefundWorkflowService;
 use App\Enums\Priority;
 use App\Enums\Department;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Enum;
 
 class RefundActionController extends Controller
 {
+    public function __construct(
+        protected RefundWorkflowService $workflow
+    ) {
+    }
+
     /**
-     * Assign a refund to an admin.
+     * Assign refund to an admin.
      */
     public function assign(Request $request, Refund $refund)
     {
@@ -46,51 +50,117 @@ class RefundActionController extends Controller
     }
 
     /**
-     * Update refund status.
+     * Approve refund and move to next workflow stage.
      */
-    public function updateStatus(Request $request, Refund $refund)
+    public function approve(Request $request, Refund $refund)
     {
         $request->validate([
-            'status' => [
-                'required',
-                new Enum(RefundStatus::class),
-            ],
-            'note' => [
-                'nullable',
-                'string',
-            ],
+            'note' => ['nullable', 'string'],
         ]);
 
-        DB::transaction(function () use ($request, $refund) {
-
-            $oldStatus = $refund->current_status;
-
-            $refund->update([
-                'current_status' => $request->status,
-            ]);
-
-            $refund->statusLogs()->create([
-                'changed_by' => null, // auth()->id() later
-                'old_status' => $oldStatus,
-                'new_status' => $request->status,
-                'note' => $request->note,
-            ]);
-        });
+        $refund = $this->workflow->approve(
+            refund: $refund,
+            note: $request->note,
+            changedBy: null // auth()->id() later
+        );
 
         return response()->json([
             'success' => true,
-            'message' => 'Refund status updated successfully.',
-            'refund' => $refund->fresh([
-                'airline',
-                'tickets',
-                'attachments',
-                'statusLogs',
-            ]),
+            'message' => 'Refund approved successfully.',
+            'refund' => $refund,
         ]);
     }
 
     /**
-     * Update refund priority.
+     * Return refund to previous department.
+     */
+    public function returnBack(Request $request, Refund $refund)
+    {
+        $request->validate([
+            'note' => ['required', 'string'],
+        ]);
+
+        $refund = $this->workflow->returnBack(
+            refund: $refund,
+            note: $request->note,
+            changedBy: null // auth()->id() later
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund returned successfully.',
+            'refund' => $refund,
+        ]);
+    }
+
+    /**
+     * Reject refund.
+     */
+    public function reject(Request $request, Refund $refund)
+    {
+        $request->validate([
+            'reason' => ['required', 'string'],
+        ]);
+
+        $refund = $this->workflow->reject(
+            refund: $refund,
+            reason: $request->reason,
+            changedBy: null // auth()->id() later
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund rejected successfully.',
+            'refund' => $refund,
+        ]);
+    }
+
+    /**
+     * Cancel refund.
+     */
+    public function cancel(Request $request, Refund $refund)
+    {
+        $request->validate([
+            'reason' => ['required', 'string'],
+        ]);
+
+        $refund = $this->workflow->cancel(
+            refund: $refund,
+            reason: $request->reason,
+            changedBy: null // auth()->id() later
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund cancelled successfully.',
+            'refund' => $refund,
+        ]);
+    }
+
+    /**
+     * Complete refund.
+     */
+    public function complete(Request $request, Refund $refund)
+    {
+        $request->validate([
+            'note' => ['nullable', 'string'],
+        ]);
+
+        $refund = $this->workflow->complete(
+            refund: $refund,
+            note: $request->note,
+            changedBy: null // auth()->id() later
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund completed successfully.',
+            'refund' => $refund,
+        ]);
+    }
+
+    /**
+     * Update priority.
      */
     public function updatePriority(Request $request, Refund $refund)
     {
@@ -118,7 +188,7 @@ class RefundActionController extends Controller
     }
 
     /**
-     * Update current department.
+     * Update department.
      */
     public function updateDepartment(Request $request, Refund $refund)
     {
@@ -146,7 +216,7 @@ class RefundActionController extends Controller
     }
 
     /**
-     * Update internal admin notes.
+     * Update admin notes.
      */
     public function updateNotes(Request $request, Refund $refund)
     {

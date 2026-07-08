@@ -71,19 +71,15 @@ enum RefundStatus: string
     public function label(): string
     {
         return match ($this) {
-
             self::NEW_REQUEST => 'New Request',
 
             self::PENDING_COMMERCIAL => 'Pending Commercial',
-
             self::RETURNED_BY_COMMERCIAL => 'Returned by Commercial',
 
             self::PENDING_AUDIT => 'Pending Audit',
-
             self::RETURNED_BY_AUDIT => 'Returned by Audit',
 
             self::PENDING_FINANCE => 'Pending Finance',
-
             self::RETURNED_BY_FINANCE => 'Returned by Finance',
 
             self::PENDING_TREASURY => 'Pending Treasury',
@@ -98,7 +94,7 @@ enum RefundStatus: string
 
     /*
     |--------------------------------------------------------------------------
-    | Workflow
+    | Next Automatic Workflow Step
     |--------------------------------------------------------------------------
     */
 
@@ -142,6 +138,74 @@ enum RefundStatus: string
 
     /*
     |--------------------------------------------------------------------------
+    | Allowed Workflow Transitions
+    |--------------------------------------------------------------------------
+    */
+
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+
+            self::NEW_REQUEST => [
+                self::PENDING_COMMERCIAL,
+                self::REJECTED,
+                self::CANCELLED,
+            ],
+
+            self::PENDING_COMMERCIAL => [
+                self::PENDING_AUDIT,
+                self::RETURNED_BY_COMMERCIAL,
+                self::REJECTED,
+            ],
+
+            self::RETURNED_BY_COMMERCIAL => [
+                self::PENDING_COMMERCIAL,
+            ],
+
+            self::PENDING_AUDIT => [
+                self::PENDING_FINANCE,
+                self::RETURNED_BY_AUDIT,
+                self::REJECTED,
+            ],
+
+            self::RETURNED_BY_AUDIT => [
+                self::PENDING_AUDIT,
+            ],
+
+            self::PENDING_FINANCE => [
+                self::PENDING_TREASURY,
+                self::RETURNED_BY_FINANCE,
+                self::REJECTED,
+            ],
+
+            self::RETURNED_BY_FINANCE => [
+                self::PENDING_FINANCE,
+            ],
+
+            self::PENDING_TREASURY => [
+                self::REFUND_COMPLETED,
+                self::REJECTED,
+            ],
+
+            self::REFUND_COMPLETED,
+            self::REJECTED,
+            self::CANCELLED => [],
+        };
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Transition
+    |--------------------------------------------------------------------------
+    */
+
+    public function canTransitionTo(self $status): bool
+    {
+        return in_array($status, $this->allowedTransitions(), true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Helpers
     |--------------------------------------------------------------------------
     */
@@ -149,40 +213,51 @@ enum RefundStatus: string
     public function isReturned(): bool
     {
         return in_array($this, [
-
             self::RETURNED_BY_COMMERCIAL,
-
             self::RETURNED_BY_AUDIT,
-
             self::RETURNED_BY_FINANCE,
-        ]);
-    }
-
-    public function isFinal(): bool
-    {
-        return in_array($this, [
-
-            self::REFUND_COMPLETED,
-
-            self::REJECTED,
-
-            self::CANCELLED,
-        ]);
+        ], true);
     }
 
     public function isPending(): bool
     {
         return in_array($this, [
-
             self::NEW_REQUEST,
-
             self::PENDING_COMMERCIAL,
-
             self::PENDING_AUDIT,
-
             self::PENDING_FINANCE,
-
             self::PENDING_TREASURY,
-        ]);
+        ], true);
+    }
+
+    public function isFinal(): bool
+    {
+        return in_array($this, [
+            self::REFUND_COMPLETED,
+            self::REJECTED,
+            self::CANCELLED,
+        ], true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Utility Methods
+    |--------------------------------------------------------------------------
+    */
+
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
+
+    public static function labels(): array
+    {
+        $labels = [];
+
+        foreach (self::cases() as $status) {
+            $labels[$status->value] = $status->label();
+        }
+
+        return $labels;
     }
 }

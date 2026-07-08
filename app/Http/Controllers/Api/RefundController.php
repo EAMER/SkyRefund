@@ -141,9 +141,10 @@ class RefundController extends Controller
                 'reference' => $refund->reference,
 
                 'refund' => $refund->load([
+                    'airline',
                     'tickets',
                     'attachments',
-                    'statusLogs'
+                    'statusLogs',
                 ]),
 
             ], 201);
