@@ -20,7 +20,9 @@ Route::post('/v1/refunds', [ApiRefundController::class, 'store']);
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')
+->middleware(['auth:sanctum',])
+->group(function () {
 
     /*
     |--------------------------------------------------------------------------

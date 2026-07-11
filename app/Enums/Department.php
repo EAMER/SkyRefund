@@ -4,28 +4,23 @@ namespace App\Enums;
 
 enum Department: string
 {
-    case REFUND = 'REFUND';
+    case REFUND = 'refund';
 
-    case COMMERCIAL = 'COMMERCIAL';
+    case COMMERCIAL = 'commercial';
 
-    case AUDIT = 'AUDIT';
+    case AUDIT = 'audit';
 
-    case FINANCE = 'FINANCE';
+    case FINANCE = 'finance';
 
-    case TREASURY = 'TREASURY';
+    case TREASURY = 'treasury';
 
     public function label(): string
     {
         return match ($this) {
-
             self::REFUND => 'Refund',
-
             self::COMMERCIAL => 'Commercial',
-
             self::AUDIT => 'Audit',
-
             self::FINANCE => 'Finance',
-
             self::TREASURY => 'Treasury',
         };
     }

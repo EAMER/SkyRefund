@@ -17,19 +17,21 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->enum('department', [
-                'administration',
-                'refund',
-                'commercial',
-                'audit',
-                'finance',
-                'treasury'
-            ])->default('refund');
+                'REFUND',
+                'COMMERCIAL',
+                'AUDIT',
+                'FINANCE',
+                'TREASURY',
+            ])->default('REFUND');
 
             $table->enum('role', [
-                'administrator',
-                'manager',
-                'officer'
-            ])->default('officer');
+                'SUPER_ADMIN',
+                'REFUND_OFFICER',
+                'COMMERCIAL',
+                'AUDIT',
+                'FINANCE',
+                'TREASURY',
+            ])->default('REFUND_OFFICER');
 
             $table->boolean('active')
                 ->default(true);
@@ -46,7 +48,7 @@ return new class extends Migration
                 'airline_id',
                 'department',
                 'role',
-                'active'
+                'active',
             ]);
         });
     }
