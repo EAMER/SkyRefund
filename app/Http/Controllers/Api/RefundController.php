@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRefundRequest;
+use App\Jobs\ProcessRefundAi;
 use App\Models\Refund;
 use App\Services\AttachmentService;
+use App\Services\RefundNotificationService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 
 class RefundController extends Controller
@@ -14,7 +18,8 @@ class RefundController extends Controller
      * Create a new controller instance.
      */
     public function __construct(
-        protected AttachmentService $attachmentService
+        protected AttachmentService $attachmentService,
+        protected RefundNotificationService $notificationService
     ) {
         //
     }
@@ -120,7 +125,7 @@ class RefundController extends Controller
 
             $refund->statusLogs()->create([
 
-                'changed_by' => null,
+                'changed_by' => Auth::id(),
 
                 'old_status' => null,
 
@@ -129,6 +134,9 @@ class RefundController extends Controller
                 'note' => 'Refund request submitted by passenger.',
 
             ]);
+
+            $this->notificationService->sendSubmissionNotification($refund);
+            Bus::dispatch(new ProcessRefundAi($refund));
 
             DB::commit();
 

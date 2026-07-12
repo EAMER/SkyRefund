@@ -8,6 +8,7 @@ use App\Services\RefundWorkflowService;
 use App\Enums\Priority;
 use App\Enums\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Enum;
 
 class RefundActionController extends Controller
@@ -22,6 +23,13 @@ class RefundActionController extends Controller
      */
     public function assign(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('assign', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to assign refunds.',
+            ], 403);
+        }
+
         $request->validate([
             'assigned_to' => ['required', 'integer'],
         ]);
@@ -54,6 +62,13 @@ class RefundActionController extends Controller
      */
     public function approve(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('approve', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to approve refunds.',
+            ], 403);
+        }
+
         $request->validate([
             'note' => ['nullable', 'string'],
         ]);
@@ -61,7 +76,7 @@ class RefundActionController extends Controller
         $refund = $this->workflow->approve(
             refund: $refund,
             note: $request->note,
-            changedBy: null // auth()->id() later
+            changedBy: Auth::id()
         );
 
         return response()->json([
@@ -76,6 +91,13 @@ class RefundActionController extends Controller
      */
     public function returnBack(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('returnBack', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to return refunds.',
+            ], 403);
+        }
+
         $request->validate([
             'note' => ['required', 'string'],
         ]);
@@ -83,7 +105,7 @@ class RefundActionController extends Controller
         $refund = $this->workflow->returnBack(
             refund: $refund,
             note: $request->note,
-            changedBy: null // auth()->id() later
+            changedBy: Auth::id()
         );
 
         return response()->json([
@@ -98,6 +120,13 @@ class RefundActionController extends Controller
      */
     public function reject(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('reject', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to reject refunds.',
+            ], 403);
+        }
+
         $request->validate([
             'reason' => ['required', 'string'],
         ]);
@@ -105,7 +134,7 @@ class RefundActionController extends Controller
         $refund = $this->workflow->reject(
             refund: $refund,
             reason: $request->reason,
-            changedBy: null // auth()->id() later
+            changedBy: Auth::id()
         );
 
         return response()->json([
@@ -120,6 +149,13 @@ class RefundActionController extends Controller
      */
     public function cancel(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('cancel', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to cancel refunds.',
+            ], 403);
+        }
+
         $request->validate([
             'reason' => ['required', 'string'],
         ]);
@@ -127,7 +163,7 @@ class RefundActionController extends Controller
         $refund = $this->workflow->cancel(
             refund: $refund,
             reason: $request->reason,
-            changedBy: null // auth()->id() later
+            changedBy: Auth::id()
         );
 
         return response()->json([
@@ -142,6 +178,13 @@ class RefundActionController extends Controller
      */
     public function complete(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('complete', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to complete refunds.',
+            ], 403);
+        }
+
         $request->validate([
             'note' => ['nullable', 'string'],
         ]);
@@ -149,7 +192,7 @@ class RefundActionController extends Controller
         $refund = $this->workflow->complete(
             refund: $refund,
             note: $request->note,
-            changedBy: null // auth()->id() later
+            changedBy: Auth::id()
         );
 
         return response()->json([
@@ -164,6 +207,13 @@ class RefundActionController extends Controller
      */
     public function updatePriority(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('updatePriority', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to update priority.',
+            ], 403);
+        }
+
         $request->validate([
             'priority' => [
                 'required',
@@ -192,6 +242,13 @@ class RefundActionController extends Controller
      */
     public function updateDepartment(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('updateDepartment', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to update department.',
+            ], 403);
+        }
+
         $request->validate([
             'department' => [
                 'required',
@@ -220,6 +277,13 @@ class RefundActionController extends Controller
      */
     public function updateNotes(Request $request, Refund $refund)
     {
+        if (! $request->user()?->can('updateNotes', $refund)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to update notes.',
+            ], 403);
+        }
+
         $request->validate([
             'admin_notes' => [
                 'required',

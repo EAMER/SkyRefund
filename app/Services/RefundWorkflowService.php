@@ -2,13 +2,20 @@
 
 namespace App\Services;
 
+use App\Enums\Department;
 use App\Enums\RefundStatus;
 use App\Models\Refund;
+use App\Services\RefundNotificationService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class RefundWorkflowService
 {
+    public function __construct(
+        protected RefundNotificationService $notificationService
+    ) {
+    }
+
     /**
      * Internal helper used by all workflow actions.
      */
@@ -52,9 +59,18 @@ class RefundWorkflowService
             $note,
             $changedBy
         ) {
+            $department = match ($newStatus) {
+                RefundStatus::NEW_REQUEST => Department::REFUND,
+                RefundStatus::PENDING_COMMERCIAL, RefundStatus::RETURNED_BY_COMMERCIAL => Department::COMMERCIAL,
+                RefundStatus::PENDING_AUDIT, RefundStatus::RETURNED_BY_AUDIT => Department::AUDIT,
+                RefundStatus::PENDING_FINANCE, RefundStatus::RETURNED_BY_FINANCE => Department::FINANCE,
+                RefundStatus::PENDING_TREASURY => Department::TREASURY,
+                RefundStatus::REFUND_COMPLETED, RefundStatus::REJECTED, RefundStatus::CANCELLED => Department::TREASURY,
+            };
 
             $refund->update([
                 'current_status' => $newStatus->value,
+                'current_department' => $department->value,
             ]);
 
             $refund->statusLogs()->create([
@@ -63,6 +79,21 @@ class RefundWorkflowService
                 'new_status' => $newStatus->value,
                 'note' => $note,
             ]);
+
+            $event = match ($newStatus) {
+                RefundStatus::PENDING_COMMERCIAL => 'approved',
+                RefundStatus::PENDING_AUDIT => 'approved',
+                RefundStatus::PENDING_FINANCE => 'approved',
+                RefundStatus::PENDING_TREASURY => 'approved',
+                RefundStatus::REFUND_COMPLETED => 'paid',
+                RefundStatus::REJECTED => 'rejected',
+                RefundStatus::RETURNED_BY_COMMERCIAL, RefundStatus::RETURNED_BY_AUDIT, RefundStatus::RETURNED_BY_FINANCE => 'returned',
+                default => null,
+            };
+
+            if ($event) {
+                $this->notificationService->sendStatusNotification($refund, $event);
+            }
         });
 
         return $refund->fresh([

@@ -18,33 +18,21 @@ class RefundController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Search by Reference
+        | Search across reference, passenger, email, phone, and notes
         |--------------------------------------------------------------------------
         */
 
-        if ($request->filled('reference')) {
-            $query->where(
-                'reference',
-                'like',
-                '%' . $request->reference . '%'
-            );
-        }
+        if ($request->filled('search')) {
+            $search = $request->search;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Search by Passenger Name
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('passenger')) {
-
-            $query->where(function ($q) use ($request) {
-
-                $q->where('first_name', 'like', '%' . $request->passenger . '%')
-                  ->orWhere('last_name', 'like', '%' . $request->passenger . '%');
-
+            $query->where(function ($q) use ($search) {
+                $q->where('reference', 'like', '%' . $search . '%')
+                  ->orWhere('first_name', 'like', '%' . $search . '%')
+                  ->orWhere('last_name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('phone', 'like', '%' . $search . '%')
+                  ->orWhere('admin_notes', 'like', '%' . $search . '%');
             });
-
         }
 
         /*
@@ -54,10 +42,7 @@ class RefundController extends Controller
         */
 
         if ($request->filled('status')) {
-            $query->where(
-                'current_status',
-                $request->status
-            );
+            $query->where('current_status', $request->status);
         }
 
         /*
@@ -67,10 +52,7 @@ class RefundController extends Controller
         */
 
         if ($request->filled('priority')) {
-            $query->where(
-                'priority',
-                $request->priority
-            );
+            $query->where('priority', $request->priority);
         }
 
         /*
@@ -80,10 +62,7 @@ class RefundController extends Controller
         */
 
         if ($request->filled('department')) {
-            $query->where(
-                'current_department',
-                $request->department
-            );
+            $query->where('current_department', $request->department);
         }
 
         /*
@@ -93,10 +72,7 @@ class RefundController extends Controller
         */
 
         if ($request->filled('assigned_to')) {
-            $query->where(
-                'assigned_to',
-                $request->assigned_to
-            );
+            $query->where('assigned_to', $request->assigned_to);
         }
 
         /*
@@ -106,10 +82,7 @@ class RefundController extends Controller
         */
 
         if ($request->filled('airline_id')) {
-            $query->where(
-                'airline_id',
-                $request->airline_id
-            );
+            $query->where('airline_id', $request->airline_id);
         }
 
         /*
@@ -119,19 +92,26 @@ class RefundController extends Controller
         */
 
         if ($request->filled('from')) {
-            $query->whereDate(
-                'created_at',
-                '>=',
-                $request->from
-            );
+            $query->whereDate('created_at', '>=', $request->from);
         }
 
         if ($request->filled('to')) {
-            $query->whereDate(
-                'created_at',
-                '<=',
-                $request->to
-            );
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Basic Sorting
+        |--------------------------------------------------------------------------
+        */
+
+        $sort = $request->get('sort', 'created_at');
+        $direction = $request->get('direction', 'desc') === 'asc' ? 'asc' : 'desc';
+
+        if (in_array($sort, ['created_at', 'updated_at', 'priority', 'current_status'], true)) {
+            $query->orderBy($sort, $direction);
+        } else {
+            $query->latest();
         }
 
         /*
@@ -141,7 +121,6 @@ class RefundController extends Controller
         */
 
         $refunds = $query
-            ->latest()
             ->paginate(
                 $request->get('per_page', 20)
             )
