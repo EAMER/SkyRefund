@@ -1,0 +1,29 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skyrefund-app
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8000:8000"
+    command: sh -c "php artisan serve --host=0.0.0.0 --port=8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: true
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: skyrefund-db
+    environment:
+      MYSQL_DATABASE: skyrefund
+      MYSQL_USER: skyrefund
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    ports:
+      - "3306:3306"

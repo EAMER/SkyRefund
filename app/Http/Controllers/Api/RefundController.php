@@ -136,7 +136,10 @@ class RefundController extends Controller
             ]);
 
             $this->notificationService->sendSubmissionNotification($refund);
-            Bus::dispatch(new ProcessRefundAi($refund));
+
+            DB::afterCommit(function () use ($refund) {
+                Bus::dispatch(new ProcessRefundAi($refund));
+            });
 
             DB::commit();
 
