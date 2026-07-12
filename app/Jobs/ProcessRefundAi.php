@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Refund;
+use App\Services\RefundAiService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,11 +18,8 @@ class ProcessRefundAi implements ShouldQueue
     {
     }
 
-    public function handle(): void
+    public function handle(RefundAiService $service): void
     {
-        $this->refund->forceFill([
-            'ai_flagged' => false,
-            'ai_score' => 0.00,
-        ])->save();
+        $service->apply($this->refund);
     }
 }
