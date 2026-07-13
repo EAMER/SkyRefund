@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Airport Refund Service</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<form action="refund.html" method="get">
+
+<section class="background-img">
+
+    <div class="logo-containers">
+        <img class="logo" src="Images/sage.webp" alt="Logo">
+        <h2 class="airport-refunds">Airline Refund</h2>
+    </div>
+
+    <h1>
+        Airport Refunds <br>
+        Made Easy <span class="bysage">by Sage</span>
+    </h1>
+
+    <div class="refund-container">
+
+        <p class="refund-context">
+            Request refunds for cancelled flights,
+            duplicate payments,
+            flight delays,
+            or unused tickets in just a few clicks.
+        </p>
+
+        <p class="airline-selection">
+            Select your airline and continue.
+        </p>
+
+        <select name="airport" required>
+
+            <option value="">Choose an Airline</option>
+
+            <option value="AC">Aero</option>
+
+            <option value="AP">Air Peace</option>
+
+        </select>
+
+        <input
+            type="text"
+            placeholder="Booking Reference"
+            required>
+
+        <input
+            type="text"
+            placeholder="Last Name"
+            required>
+
+        <button type="submit">
+            Continue
+        </button>
+
+    </div>
+
+</section>
+
+</form>
+
+</body>
+</html>
