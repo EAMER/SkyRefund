@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund Submitted</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section class="submission-page">
+
+    <div class="submission-card">
+
+        <div class="success-icon">
+            ✓
+        </div>
+
+        <h1>Refund Request Submitted</h1>
+
+        <p>
+            Thank you for submitting your refund request.
+            Your application has been received successfully.
+        </p>
+
+        <div class="reference-box">
+
+            <h3>Reference Number</h3>
+
+            <h2 id="referenceNumber"></h2>
+
+        </div>
+
+        <div class="status-box">
+
+            <h3>Current Status</h3>
+
+            <p class="status">🟡 Pending Review</p>
+
+            <h3>Estimated Processing Time</h3>
+
+            <p>7 - 14 Business Days</p>
+
+        </div>
+
+        <div class="buttons">
+
+            <a href="track.html" class="track-btn">
+                Track Refund
+            </a>
+
+            <a href="index.html" class="home-btn">
+                Back Home
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+<script>
+
+const randomNumber = Math.floor(Math.random()*900000)+100000;
+
+document.getElementById("referenceNumber").innerHTML =
+"REF-2026-" + randomNumber;
+
+</script><script src="script.js"></script>
+
+</body>
+</html>

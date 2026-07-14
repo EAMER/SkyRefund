@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund Application</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section class="refund-page">
+
+    <div class="refund-box">
+
+        <h1>Refund Application</h1>
+        <p>Please complete the information below.</p>
+
+        <form action="submission.html" method="get">
+
+            <h3>Passenger Information</h3>
+
+            <input type="text" placeholder="Full Name" required>
+
+            <input type="email" placeholder="Email Address" required>
+
+            <input type="tel" placeholder="Phone Number" required>
+
+            <hr>
+
+            <h3>Flight Information</h3>
+
+            <input type="text" placeholder="Flight Number" required>
+
+            <input type="date" required>
+
+            <input type="text" placeholder="Departure Airport">
+
+            <input type="text" placeholder="Arrival Airport">
+
+            <hr>
+
+            <h3>Refund Information</h3>
+
+            <select required>
+                <option value="">Reason for Refund</option>
+                <option>Flight Cancelled</option>
+                <option>Flight Delayed</option>
+                <option>Duplicate Payment</option>
+                <option>Unused Ticket</option>
+                <option>Schedule Change</option>
+            </select>
+
+            <textarea placeholder="Explain your reason for requesting a refund..." rows="5"></textarea>
+
+            <hr>
+
+            <h3>Payment Information</h3>
+
+            <input type="text" placeholder="Bank Name" required>
+
+            <input type="text" placeholder="Account Name" required>
+
+            <input type="text" placeholder="Account Number" required>
+
+            <hr>
+
+            <h3>Verification Documents</h3>
+
+            <label>Signature <span>*</span></label>
+
+            <input type="file" required>
+
+            <p class="upload-note">
+                Upload a clear image of your signature.
+            </p>
+
+            <label>
+                Passenger ID <span>*</span>
+            </label>
+
+            <input type="file" required>
+
+            <p class="upload-note">
+                National ID, International Passport, Voter's Card or Driver's Licence.
+            </p>
+
+            <label>
+                Account Holder ID <span>*</span>
+            </label>
+
+            <input type="file" required>
+
+            <p class="upload-note">
+                Account Holder Means of ID (Valid National ID / International Passport).
+            </p>
+
+            <hr>
+
+            <label class="consent">
+                <input type="checkbox" required>
+                I confirm that all information provided is correct and I agree to the refund policy.
+            </label>
+
+            <button type="submit">
+                Submit Refund Request
+            </button>
+
+        </form>
+
+    </div>
+
+</section>
+
+</body>
+</html>
