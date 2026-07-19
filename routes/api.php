@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\RefundController as AdminRefundController;
 use App\Http\Controllers\Admin\RefundActionController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Api\AirlineController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +20,7 @@ use App\Http\Controllers\Admin\ReportController;
 Route::prefix('v1')->group(function () {
     Route::get('/health', [HealthController::class, 'index']);
     Route::post('/refunds', [ApiRefundController::class, 'store']);
+    Route::get('/airlines', [AirlineController::class, 'index']);
 
     Route::prefix('admin')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);

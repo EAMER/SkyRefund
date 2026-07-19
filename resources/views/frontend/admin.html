@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyRefund Admin</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <img class="sidebar-logo" src="images/gemi.png" alt="Sky Refund logo">
+                <div>
+                    <p class="sidebar-title">SkyRefund</p>
+                    <p class="sidebar-caption">Admin</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="nav-item active" href="#">Refund Requests</a>
+                <a class="nav-item" href="#">Queue Management</a>
+                <a class="nav-item" href="#">AI Analytics</a>
+                <a class="nav-item" href="#">User Management</a>
+                <a class="nav-item" href="#">Reports</a>
+                <a class="nav-item" href="#">Settings</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="status-dot online"></span>
+                <span>Online</span>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <div class="topbar-search">
+                    <input type="text" placeholder="Search requests, users, airlines...">
+                </div>
+                <div class="topbar-actions">
+                    <button class="icon-button" title="Search">🔍</button>
+                    <button class="icon-button" title="Notifications">🔔</button>
+                    <button class="icon-button" title="Messages">💬</button>
+                    <div class="profile-pill">
+                        <span>JD</span>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="dashboard-top-cards">
+                <div class="metric-card">
+                    <p class="metric-label">Total Requests (Month)</p>
+                    <h2>481,830</h2>
+                    <p class="metric-change">↑ 1.32%</p>
+                </div>
+                <div class="metric-card accent-card">
+                    <p class="metric-label">Average Processing Time</p>
+                    <h2>2h 30ms</h2>
+                    <p class="metric-caption">Speed-up trend</p>
+                </div>
+                <div class="metric-card">
+                    <p class="metric-label">AI-Flagged Requests</p>
+                    <h2>63</h2>
+                    <p class="metric-caption">Review Required</p>
+                </div>
+                <div class="metric-card">
+                    <p class="metric-label">Requests Flagged by AI</p>
+                    <h2>0</h2>
+                    <p class="metric-caption">Potential Fraud/Reject</p>
+                </div>
+            </section>
+
+            <section class="dashboard-panels">
+                <div class="panel-card chart-card">
+                    <div class="panel-header">
+                        <p class="panel-title">Processing Time Trend</p>
+                        <span class="panel-tag">Processing Time Trend is lines lost decrease due to AI</span>
+                    </div>
+                    <div class="chart-canvas">
+                        <div class="chart-line"></div>
+                        <div class="chart-axis">
+                            <span>Jan</span>
+                            <span>Feb</span>
+                            <span>Mar</span>
+                            <span>Apr</span>
+                            <span>May</span>
+                            <span>Jun</span>
+                            <span>Jul</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-card breakdown-card">
+                    <div class="panel-header">
+                        <p class="panel-title">Refund Status Breakdown</p>
+                    </div>
+                    <div class="pie-legend">
+                        <div class="pie-chart"></div>
+                        <div class="legend-items">
+                            <div class="legend-item"><span class="legend-dot approved"></span>Approved</div>
+                            <div class="legend-item"><span class="legend-dot declined"></span>Rejected</div>
+                            <div class="legend-item"><span class="legend-dot pending"></span>Pending Review</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="request-table-panel">
+                <div class="panel-row">
+                    <div class="search-bar">
+                        <input type="text" placeholder="Search request ID, name, email...">
+                    </div>
+                    <div class="filter-group">
+                        <select>
+                            <option value="">Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="declined">Declined</option>
+                        </select>
+                        <select>
+                            <option value="">Date</option>
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                        </select>
+                        <select>
+                            <option value="">AI Flag</option>
+                            <option value="true">Flagged</option>
+                            <option value="false">Not flagged</option>
+                        </select>
+                        <button class="filter-button">Filter</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox"></th>
+                                <th>Request ID</th>
+                                <th>User Name</th>
+                                <th>Ticket Number</th>
+                                <th>Amount</th>
+                                <th>Reason</th>
+                                <th>Submission Date</th>
+                                <th>AI Flag</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>REF-001</td>
+                                <td>John Doe</td>
+                                <td>REF03153-1</td>
+                                <td>$350</td>
+                                <td>Cancellation</td>
+                                <td>2023-05-08 08:38 PM</td>
+                                <td><span class="status-pill status-success">Auto-Approve</span></td>
+                                <td><span class="status-pill status-warning">Pending Approve</span></td>
+                                <td class="action-buttons"><button class="action-button approve">Approve</button><button class="action-button review">Review</button><button class="action-button reject">Reject</button></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>REF-002</td>
+                                <td>Jane Smith</td>
+                                <td>REF03153-2</td>
+                                <td>$520</td>
+                                <td>Medical</td>
+                                <td>2023-05-08 08:38 PM</td>
+                                <td><span class="status-pill status-warning">Requires Manual Review</span></td>
+                                <td><span class="status-pill status-warning">Pending Review</span></td>
+                                <td class="action-buttons"><button class="action-button approve">Approve</button><button class="action-button review">Review</button><button class="action-button reject">Reject</button></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>REF-003</td>
+                                <td>Baye Smith</td>
+                                <td>REF03153-3</td>
+                                <td>$320</td>
+                                <td>Medical Emergency</td>
+                                <td>2023-05-08 08:30 PM</td>
+                                <td><span class="status-pill status-warning">Requires Manual Review</span></td>
+                                <td><span class="status-pill status-warning">Pending Review</span></td>
+                                <td class="action-buttons"><button class="action-button approve">Approve</button><button class="action-button review">Review</button><button class="action-button reject">Reject</button></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>REF-004</td>
+                                <td>Emna Smith</td>
+                                <td>REF03153-4</td>
+                                <td>$420</td>
+                                <td>Medical Emergency</td>
+                                <td>2023-05-08 08:30 PM</td>
+                                <td><span class="status-pill status-danger">Potential Fraud/Reject</span></td>
+                                <td><span class="status-pill status-warning">Pending Approve</span></td>
+                                <td class="action-buttons"><button class="action-button approve">Approve</button><button class="action-button review">Review</button><button class="action-button reject">Reject</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span>Showing 1 to 4 of 24 entries</span>
+                    <div class="pagination">
+                        <button class="page-button">‹</button>
+                        <button class="page-button active">1</button>
+                        <button class="page-button">2</button>
+                        <button class="page-button">›</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

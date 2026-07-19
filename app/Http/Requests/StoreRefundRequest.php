@@ -130,6 +130,7 @@ class StoreRefundRequest extends FormRequest
             'attachments' => ['nullable', 'array'],
 
             'attachments.*' => [
+                'nullable',
                 'file',
                 'max:10240', // 10MB
             ],
