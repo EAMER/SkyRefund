@@ -76,27 +76,37 @@ class User extends Authenticatable
     /**
      * Check if user has a specific role.
      */
-    public function hasRole(UserRole|string $role): bool
-    {
-        if ($role instanceof UserRole) {
-            return $this->role === $role;
-        }
-
-        return $this->role->value === $role;
+public function hasRole(UserRole|string $role): bool
+{
+    if (! $this->role) {
+        return false;
     }
 
+
+    if ($role instanceof UserRole) {
+        return $this->role === $role;
+    }
+
+
+    return $this->role->value === $role;
+}
     /**
      * Check if user belongs to a department.
      */
-    public function inDepartment(Department|string $department): bool
-    {
-        if ($department instanceof Department) {
-            return $this->department === $department;
-        }
-
-        return $this->department->value === $department;
+public function inDepartment(Department|string $department): bool
+{
+    if (! $this->department) {
+        return false;
     }
 
+
+    if ($department instanceof Department) {
+        return $this->department === $department;
+    }
+
+
+    return $this->department->value === $department;
+}
     /**
      * Check if user is a super administrator.
      */

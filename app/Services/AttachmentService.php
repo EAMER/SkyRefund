@@ -7,50 +7,75 @@ use App\Models\Refund;
 use App\Models\RefundAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
+use RuntimeException;
 
 class AttachmentService
 {
     /**
-     * Store all uploaded attachments for a refund.
+     * Store all refund attachments.
      */
-    public function store(Refund $refund, Request $request): void
-    {
-        if (! $request->hasFile('attachments')) {
+    public function store(
+        Refund $refund,
+        Request $request
+    ): void {
+
+        $files = $request->file('attachments', []);
+
+        $types = $request->input(
+            'attachment_types',
+            []
+        );
+
+
+        if (empty($files)) {
             return;
         }
 
-        $files = $request->file('attachments', []);
-        $types = $request->input('attachment_types', []);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Ensure every uploaded file has a matching attachment type
-        |--------------------------------------------------------------------------
-        */
 
         if (count($files) !== count($types)) {
-            throw new InvalidArgumentException(
-                'Each uploaded attachment must have a matching attachment type.'
+
+            throw new RuntimeException(
+                'Each attachment must have a matching attachment type.'
             );
         }
 
+
+
         foreach ($files as $index => $file) {
 
-            $type = AttachmentType::tryFrom($types[$index])
-                ?? AttachmentType::OTHER;
+
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+
+            $type = AttachmentType::tryFrom(
+                $types[$index]
+            );
+
+
+            if (! $type) {
+
+                $type = AttachmentType::OTHER;
+            }
+
+
 
             $this->storeSingleAttachment(
-                refund: $refund,
-                file: $file,
-                type: $type
+                $refund,
+                $file,
+                $type
             );
         }
     }
 
+
+
+
     /**
-     * Store a single attachment.
+     * Store one attachment.
      */
     protected function storeSingleAttachment(
         Refund $refund,
@@ -58,47 +83,116 @@ class AttachmentService
         AttachmentType $type
     ): RefundAttachment {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Generate a secure filename
-        |--------------------------------------------------------------------------
-        */
 
-        $storedName = Str::uuid() . '.' . $file->extension();
+        $this->validateFile($file);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Store the file
-        |--------------------------------------------------------------------------
-        */
+
+
+        $storedName =
+            Str::uuid()
+            . '.'
+            . $file->extension();
+
+
+
+        $directory =
+            "refunds/{$refund->id}";
+
+
 
         $path = $file->storeAs(
-            "private/refunds/{$refund->id}",
-            $storedName
+            $directory,
+            $storedName,
+            'local'
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Save attachment record
-        |--------------------------------------------------------------------------
-        */
+
+
+        if (! $path) {
+
+            throw new RuntimeException(
+                'Unable to store attachment.'
+            );
+        }
+
+
 
         return RefundAttachment::create([
 
-            'refund_id'      => $refund->id,
+            'refund_id' =>
+                $refund->id,
 
-            'type'           => $type->value,
 
-            'original_name'  => $file->getClientOriginalName(),
+            'type' =>
+                $type,
 
-            'stored_name'    => $storedName,
 
-            'path'           => $path,
+            'original_name' =>
+                $file->getClientOriginalName(),
 
-            'mime_type'      => $file->getMimeType(),
 
-            'size'           => $file->getSize(),
+            'stored_name' =>
+                $storedName,
+
+
+            'path' =>
+                $path,
+
+
+            'mime_type' =>
+                $file->getMimeType(),
+
+
+            'size' =>
+                $file->getSize(),
 
         ]);
+    }
+
+
+
+
+
+    /**
+     * Validate uploaded files.
+     */
+    protected function validateFile(
+        UploadedFile $file
+    ): void {
+
+
+        $allowedMimeTypes = [
+
+            'image/jpeg',
+
+            'image/png',
+
+            'application/pdf',
+
+        ];
+
+
+
+        if (
+            ! in_array(
+                $file->getMimeType(),
+                $allowedMimeTypes,
+                true
+            )
+        ) {
+
+            throw new RuntimeException(
+                'Unsupported attachment type.'
+            );
+        }
+
+
+
+        if ($file->getSize() > 10 * 1024 * 1024) {
+
+            throw new RuntimeException(
+                'Attachment exceeds 10MB limit.'
+            );
+        }
     }
 }

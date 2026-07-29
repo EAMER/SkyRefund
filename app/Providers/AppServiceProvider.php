@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\Refund;
+use App\Models\User;
+use App\Policies\UserPolicy;
 use App\Policies\RefundPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -14,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+       //
     }
 
     /**
@@ -23,5 +25,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Refund::class, RefundPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 }

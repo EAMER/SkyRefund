@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Enums\Department;
 use App\Enums\RefundStatus;
 use App\Models\Refund;
-use App\Services\RefundNotificationService;
+use App\Models\RefundTicket;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -16,8 +16,9 @@ class RefundWorkflowService
     ) {
     }
 
+
     /**
-     * Internal helper used by all workflow actions.
+     * Change refund status internally.
      */
     protected function changeStatus(
         Refund $refund,
@@ -26,31 +27,26 @@ class RefundWorkflowService
         ?int $changedBy = null
     ): Refund {
 
-        $currentStatus = RefundStatus::from($refund->current_status);
+        $currentStatus = $refund->current_status instanceof RefundStatus
+            ? $refund->current_status
+            : RefundStatus::from($refund->current_status);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent duplicate updates
-        |--------------------------------------------------------------------------
-        */
 
         if ($currentStatus === $newStatus) {
+
             throw new InvalidArgumentException(
                 "Refund is already {$newStatus->label()}."
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validate workflow transition
-        |--------------------------------------------------------------------------
-        */
 
         if (! $currentStatus->canTransitionTo($newStatus)) {
+
             throw new InvalidArgumentException(
                 "Invalid workflow transition from {$currentStatus->label()} to {$newStatus->label()}."
             );
         }
+
 
         DB::transaction(function () use (
             $refund,
@@ -59,42 +55,107 @@ class RefundWorkflowService
             $note,
             $changedBy
         ) {
+
+
             $department = match ($newStatus) {
-                RefundStatus::NEW_REQUEST => Department::REFUND,
-                RefundStatus::PENDING_COMMERCIAL, RefundStatus::RETURNED_BY_COMMERCIAL => Department::COMMERCIAL,
-                RefundStatus::PENDING_AUDIT, RefundStatus::RETURNED_BY_AUDIT => Department::AUDIT,
-                RefundStatus::PENDING_FINANCE, RefundStatus::RETURNED_BY_FINANCE => Department::FINANCE,
-                RefundStatus::PENDING_TREASURY => Department::TREASURY,
-                RefundStatus::REFUND_COMPLETED, RefundStatus::REJECTED, RefundStatus::CANCELLED => Department::TREASURY,
+
+                RefundStatus::NEW_REQUEST =>
+                    Department::REFUND,
+
+                RefundStatus::PENDING_COMMERCIAL,
+                RefundStatus::RETURNED_BY_COMMERCIAL =>
+                    Department::COMMERCIAL,
+
+                RefundStatus::PENDING_AUDIT,
+                RefundStatus::RETURNED_BY_AUDIT =>
+                    Department::AUDIT,
+
+                RefundStatus::PENDING_FINANCE,
+                RefundStatus::RETURNED_BY_FINANCE =>
+                    Department::FINANCE,
+
+                RefundStatus::PENDING_TREASURY =>
+                    Department::TREASURY,
+
+                RefundStatus::REFUND_COMPLETED,
+                RefundStatus::REJECTED,
+                RefundStatus::CANCELLED =>
+                    Department::TREASURY,
             };
 
+
             $refund->update([
-                'current_status' => $newStatus->value,
-                'current_department' => $department->value,
+
+                'current_status' => $newStatus,
+
+                'current_department' => $department,
+
             ]);
+
+
 
             $refund->statusLogs()->create([
+
                 'changed_by' => $changedBy,
+
                 'old_status' => $currentStatus->value,
+
                 'new_status' => $newStatus->value,
+
                 'note' => $note,
+
             ]);
 
+
+
             $event = match ($newStatus) {
-                RefundStatus::PENDING_COMMERCIAL => 'approved',
-                RefundStatus::PENDING_AUDIT => 'approved',
-                RefundStatus::PENDING_FINANCE => 'approved',
-                RefundStatus::PENDING_TREASURY => 'approved',
-                RefundStatus::REFUND_COMPLETED => 'paid',
-                RefundStatus::REJECTED => 'rejected',
-                RefundStatus::RETURNED_BY_COMMERCIAL, RefundStatus::RETURNED_BY_AUDIT, RefundStatus::RETURNED_BY_FINANCE => 'returned',
+
+
+                RefundStatus::PENDING_COMMERCIAL,
+                RefundStatus::PENDING_AUDIT,
+                RefundStatus::PENDING_FINANCE,
+                RefundStatus::PENDING_TREASURY =>
+                    'approved',
+
+
+                RefundStatus::REFUND_COMPLETED =>
+                    'paid',
+
+
+                RefundStatus::REJECTED =>
+                    'rejected',
+
+
+                RefundStatus::RETURNED_BY_COMMERCIAL,
+                RefundStatus::RETURNED_BY_AUDIT,
+                RefundStatus::RETURNED_BY_FINANCE =>
+                    'returned',
+
+
                 default => null,
             };
 
+
             if ($event) {
-                $this->notificationService->sendStatusNotification($refund, $event);
+
+                DB::afterCommit(function () use (
+                    $refund,
+                    $event
+                ) {
+
+                    $this->notificationService
+                        ->sendStatusNotification(
+                            $refund,
+                            $event
+                        );
+
+                });
+
             }
+
+
         });
+
 
         return $refund->fresh([
             'airline',
@@ -102,110 +163,171 @@ class RefundWorkflowService
             'attachments',
             'statusLogs',
         ]);
+
     }
 
-    /**
-     * Approve and move to the next workflow stage.
-     */
+
+
+
+
+
+    public function adjustTicketAmount(
+    RefundTicket $ticket,
+    float $newAmount,
+    string $reason,
+    ?int $changedBy = null
+): RefundTicket {
+
+    if ($newAmount > (float) $ticket->fare_paid) {
+        throw new InvalidArgumentException(
+            'Refund amount cannot exceed the fare paid.'
+        );
+    }
+
+    DB::transaction(function () use ($ticket, $newAmount, $reason, $changedBy) {
+
+        $ticket->amountLogs()->create([
+            'changed_by' => $changedBy,
+            'old_amount' => $ticket->refund_amount,
+            'new_amount' => $newAmount,
+            'reason' => $reason,
+        ]);
+
+        $ticket->update(['refund_amount' => $newAmount]);
+    });
+
+    return $ticket->fresh(['amountLogs']);
+}
+
+
+
+
     public function approve(
         Refund $refund,
         ?string $note = null,
         ?int $changedBy = null
     ): Refund {
 
-        $currentStatus = RefundStatus::from($refund->current_status);
+
+        $currentStatus = $refund->current_status instanceof RefundStatus
+            ? $refund->current_status
+            : RefundStatus::from($refund->current_status);
+
+
 
         $nextStatus = $currentStatus->next();
 
+
+
         if (! $nextStatus) {
+
             throw new InvalidArgumentException(
                 'This refund cannot be approved.'
             );
+
         }
 
+
+
         return $this->changeStatus(
-            refund: $refund,
-            newStatus: $nextStatus,
-            note: $note,
-            changedBy: $changedBy,
+            $refund,
+            $nextStatus,
+            $note,
+            $changedBy
         );
+
     }
 
-    /**
-     * Return the refund to the previous workflow stage.
-     */
+
+
     public function returnBack(
         Refund $refund,
         ?string $note = null,
         ?int $changedBy = null
     ): Refund {
 
-        $currentStatus = RefundStatus::from($refund->current_status);
+
+        $currentStatus = $refund->current_status instanceof RefundStatus
+            ? $refund->current_status
+            : RefundStatus::from($refund->current_status);
+
+
 
         $previousStatus = $currentStatus->returnedTo();
 
+
+
         if (! $previousStatus) {
+
             throw new InvalidArgumentException(
                 'This refund cannot be returned.'
             );
+
         }
 
+
+
         return $this->changeStatus(
-            refund: $refund,
-            newStatus: $previousStatus,
-            note: $note,
-            changedBy: $changedBy,
+            $refund,
+            $previousStatus,
+            $note,
+            $changedBy
         );
+
     }
 
-    /**
-     * Reject the refund.
-     */
+
+
     public function reject(
         Refund $refund,
         string $reason,
         ?int $changedBy = null
     ): Refund {
 
+
         return $this->changeStatus(
-            refund: $refund,
-            newStatus: RefundStatus::REJECTED,
-            note: $reason,
-            changedBy: $changedBy,
+            $refund,
+            RefundStatus::REJECTED,
+            $reason,
+            $changedBy
         );
+
     }
 
-    /**
-     * Cancel the refund.
-     */
+
+
     public function cancel(
         Refund $refund,
         string $reason,
         ?int $changedBy = null
     ): Refund {
 
+
         return $this->changeStatus(
-            refund: $refund,
-            newStatus: RefundStatus::CANCELLED,
-            note: $reason,
-            changedBy: $changedBy,
+            $refund,
+            RefundStatus::CANCELLED,
+            $reason,
+            $changedBy
         );
+
     }
 
-    /**
-     * Complete the refund.
-     */
+
+
     public function complete(
         Refund $refund,
         ?string $note = null,
         ?int $changedBy = null
     ): Refund {
 
+
         return $this->changeStatus(
-            refund: $refund,
-            newStatus: RefundStatus::REFUND_COMPLETED,
-            note: $note,
-            changedBy: $changedBy,
+            $refund,
+            RefundStatus::REFUND_COMPLETED,
+            $note,
+            $changedBy
         );
+
     }
+
 }

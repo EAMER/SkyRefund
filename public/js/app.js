@@ -88,7 +88,7 @@ welcomeForm.addEventListener("submit", function (e) {
     const airlineSelect = document.getElementById("welcome_airline");
 
     const airlineId = airlineSelect.value;
- 
+
     const airlineCode =
     airlineSelect.options[airlineSelect.selectedIndex].dataset.code;
 

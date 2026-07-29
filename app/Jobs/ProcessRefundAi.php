@@ -9,17 +9,69 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ProcessRefundAi implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(protected Refund $refund)
-    {
+
+    /**
+     * Maximum retry attempts.
+     */
+    public int $tries = 5;
+
+
+    /**
+     * Retry delay.
+     */
+    public int $backoff = 120;
+
+
+    /**
+     * Send AI tasks to dedicated queue.
+     */
+    public string $queue = 'ai-processing';
+
+
+
+    public function __construct(
+        protected Refund $refund
+    ) {
     }
 
-    public function handle(RefundAiService $service): void
-    {
+
+
+    public function handle(
+        RefundAiService $service
+    ): void {
+
         $service->apply($this->refund);
+
+    }
+
+
+
+    /**
+     * Runs when all retries fail.
+     */
+    public function failed(
+        Throwable $exception
+    ): void {
+
+        Log::error(
+            'Refund AI processing failed',
+            [
+                'refund_id' => $this->refund->id,
+                'reference' => $this->refund->reference,
+                'error' => $exception->getMessage(),
+            ]
+        );
+
+
+        $this->refund->update([
+            'ai_flagged' => true,
+        ]);
     }
 }

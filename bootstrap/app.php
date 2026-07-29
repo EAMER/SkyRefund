@@ -14,7 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureRole::class,
+
+        'tenant' =>
+            \App\Http\Middleware\VerifyAirlineTenant::class,
+            'role' =>
+            \App\Http\Middleware\EnsureRole::class,
         ]);
 
         $middleware->append(\App\Http\Middleware\ThrottlePublicApi::class);

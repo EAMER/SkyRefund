@@ -2,17 +2,15 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\UserRole;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureRole
+class VerifyAirlineTenant
 {
     public function handle(
         Request $request,
-        Closure $next,
-        ...$roles
+        Closure $next
     ): Response {
 
 
@@ -42,40 +40,17 @@ class EnsureRole
 
 
 
-
         /*
         |--------------------------------------------------------------------------
-        | Role Assignment Check
+        | Super Admin Bypass
         |--------------------------------------------------------------------------
+        |
+        | Super admins manage all airlines.
+        |
         */
 
 
-        if (! $user->role) {
-
-            return response()->json([
-
-                'success'=>false,
-
-                'message'=>'User role not assigned.'
-
-            ],403);
-
-        }
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Super Admin Override
-        |--------------------------------------------------------------------------
-        */
-
-
-        if (
-            $user->role === UserRole::SUPER_ADMIN
-        ) {
+        if ($user->isSuperAdmin()) {
 
             return $next($request);
 
@@ -84,21 +59,25 @@ class EnsureRole
 
 
 
-
         /*
         |--------------------------------------------------------------------------
-        | Normalize Roles
+        | Normal User Airline Check
         |--------------------------------------------------------------------------
         */
 
 
-        $allowedRoles = collect($roles)
-            ->map(fn($role)=>
-                $role instanceof UserRole
-                    ? $role->value
-                    : $role
-            )
-            ->toArray();
+        if (! $user->airline_id) {
+
+
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'User is not assigned to an airline.'
+
+            ],403);
+
+        }
 
 
 
@@ -106,17 +85,26 @@ class EnsureRole
 
         /*
         |--------------------------------------------------------------------------
-        | Permission Check
+        | Prevent Cross Airline Access
         |--------------------------------------------------------------------------
         */
+
+
+        $airlineId =
+            $request->route('airline')
+            ??
+            $request->input('airline_id');
+
 
 
         if (
-            ! in_array(
-                $user->role->value,
-                $allowedRoles,
-                true
-            )
+
+            $airlineId
+
+            &&
+
+            (int)$airlineId !== (int)$user->airline_id
+
         ) {
 
 
@@ -124,13 +112,12 @@ class EnsureRole
 
                 'success'=>false,
 
-                'message'=>
-                    'You do not have permission to perform this action.'
+                'message'=>'You cannot access another airline.'
 
             ],403);
 
-        }
 
+        }
 
 
 

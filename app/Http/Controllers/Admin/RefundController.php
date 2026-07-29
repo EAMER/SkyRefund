@@ -4,115 +4,283 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Refund;
+use App\Enums\UserRole;
+use App\Enums\Department;
 use Illuminate\Http\Request;
 
 class RefundController extends Controller
 {
+
     /**
-     * Display a paginated list of refunds with filters.
+     * Display paginated refunds.
      */
     public function index(Request $request)
     {
+
+        $user = $request->user();
+
+
         $query = Refund::query()
-            ->with('airline');
+            ->with([
+                'airline',
+                'assignee'
+            ]);
+
+
 
         /*
         |--------------------------------------------------------------------------
-        | Search across reference, passenger, email, phone, and notes
+        | Tenant Isolation
         |--------------------------------------------------------------------------
         */
+
+
+        if (! $user->isSuperAdmin()) {
+
+            $query->where(
+                'airline_id',
+                $user->airline_id
+            );
+
+        }
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Department Visibility
+        |--------------------------------------------------------------------------
+        | Refund officers and super admins see every refund regardless of stage.
+        | Every other role (commercial, audit, finance, treasury) only sees
+        | refunds currently sitting in their own department's queue.
+        */
+
+
+        if (
+            ! $user->isSuperAdmin()
+            &&
+            ! $user->hasRole(UserRole::REFUND_OFFICER)
+        ) {
+
+            $departmentForRole = match (true) {
+
+                $user->hasRole(UserRole::COMMERCIAL) => Department::COMMERCIAL,
+                $user->hasRole(UserRole::AUDIT) => Department::AUDIT,
+                $user->hasRole(UserRole::FINANCE) => Department::FINANCE,
+                $user->hasRole(UserRole::TREASURY) => Department::TREASURY,
+
+                default => null,
+
+            };
+
+
+            if ($departmentForRole) {
+
+                $query->where(
+                    'current_department',
+                    $departmentForRole
+                );
+
+            } else {
+
+                // Role isn't recognized for department scoping — show nothing
+                // rather than accidentally leaking every refund.
+                $query->whereRaw('1 = 0');
+
+            }
+
+        }
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+
 
         if ($request->filled('search')) {
+
             $search = $request->search;
 
-            $query->where(function ($q) use ($search) {
-                $q->where('reference', 'like', '%' . $search . '%')
-                  ->orWhere('first_name', 'like', '%' . $search . '%')
-                  ->orWhere('last_name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%')
-                  ->orWhere('phone', 'like', '%' . $search . '%')
-                  ->orWhere('admin_notes', 'like', '%' . $search . '%');
+
+            $query->where(function($q) use ($search){
+
+                $q->where(
+                    'reference',
+                    'like',
+                    "%{$search}%"
+                )
+
+                ->orWhere(
+                    'first_name',
+                    'like',
+                    "%{$search}%"
+                )
+
+                ->orWhere(
+                    'last_name',
+                    'like',
+                    "%{$search}%"
+                )
+
+                ->orWhere(
+                    'email',
+                    'like',
+                    "%{$search}%"
+                )
+
+                ->orWhere(
+                    'phone',
+                    'like',
+                    "%{$search}%"
+                );
+
             });
+
         }
+
+
+
+
 
         /*
         |--------------------------------------------------------------------------
-        | Filter by Status
+        | Filters
         |--------------------------------------------------------------------------
         */
 
-        if ($request->filled('status')) {
-            $query->where('current_status', $request->status);
+
+        $filters = [
+
+            'current_status',
+            'priority',
+            'current_department',
+            'assigned_to',
+            'airline_id',
+
+        ];
+
+
+
+        foreach ($filters as $filter) {
+
+            if ($request->filled($filter)) {
+
+                /*
+                 Prevent normal users
+                 overriding tenant filter
+                */
+
+                if (
+                    $filter === 'airline_id'
+                    &&
+                    ! $user->isSuperAdmin()
+                ) {
+
+                    continue;
+
+                }
+
+
+                $query->where(
+                    $filter,
+                    $request->$filter
+                );
+
+            }
+
         }
+
+
+
 
         /*
         |--------------------------------------------------------------------------
-        | Filter by Priority
+        | Date Filters
         |--------------------------------------------------------------------------
         */
 
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->priority);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Filter by Department
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('department')) {
-            $query->where('current_department', $request->department);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Filter by Assigned Admin
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('assigned_to')) {
-            $query->where('assigned_to', $request->assigned_to);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Filter by Airline
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->filled('airline_id')) {
-            $query->where('airline_id', $request->airline_id);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Filter by Date Range
-        |--------------------------------------------------------------------------
-        */
 
         if ($request->filled('from')) {
-            $query->whereDate('created_at', '>=', $request->from);
+
+            $query->whereDate(
+                'created_at',
+                '>=',
+                $request->from
+            );
+
         }
 
+
+
         if ($request->filled('to')) {
-            $query->whereDate('created_at', '<=', $request->to);
+
+            $query->whereDate(
+                'created_at',
+                '<=',
+                $request->to
+            );
+
         }
+
+
+
 
         /*
         |--------------------------------------------------------------------------
-        | Basic Sorting
+        | Sorting
         |--------------------------------------------------------------------------
         */
 
-        $sort = $request->get('sort', 'created_at');
-        $direction = $request->get('direction', 'desc') === 'asc' ? 'asc' : 'desc';
 
-        if (in_array($sort, ['created_at', 'updated_at', 'priority', 'current_status'], true)) {
-            $query->orderBy($sort, $direction);
-        } else {
-            $query->latest();
+        $allowedSorts = [
+
+            'created_at',
+            'updated_at',
+            'priority',
+            'current_status'
+
+        ];
+
+
+        $sort = $request->get(
+            'sort',
+            'created_at'
+        );
+
+
+        $direction =
+            $request->get('direction') === 'asc'
+            ? 'asc'
+            : 'desc';
+
+
+
+        if(
+            in_array(
+                $sort,
+                $allowedSorts,
+                true
+            )
+        ){
+
+            $query->orderBy(
+                $sort,
+                $direction
+            );
+
         }
+        else {
+
+            $query->latest();
+
+        }
+
+
+
+
 
         /*
         |--------------------------------------------------------------------------
@@ -120,27 +288,96 @@ class RefundController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $refunds = $query
-            ->paginate(
-                $request->get('per_page', 20)
+
+        $refunds =
+            $query->paginate(
+                min(
+                    $request->get('per_page',20),
+                    100
+                )
             )
             ->withQueryString();
 
-        return response()->json($refunds);
-    }
 
-    /**
-     * Display a single refund.
-     */
-    public function show(Refund $refund)
-    {
-        $refund->load([
-            'airline',
-            'tickets',
-            'attachments',
-            'statusLogs',
+
+        return response()->json([
+
+            'success'=>true,
+
+            'data'=>$refunds
+
         ]);
 
-        return response()->json($refund);
     }
+
+
+
+
+
+    /**
+     * Display refund details.
+     */
+    public function show(
+        Request $request,
+        Refund $refund
+    ){
+
+        $user=$request->user();
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tenant Security
+        |--------------------------------------------------------------------------
+        */
+
+
+        if(
+            ! $user->isSuperAdmin()
+            &&
+            $refund->airline_id !== $user->airline_id
+        ){
+
+            return response()->json([
+
+                'success'=>false,
+
+                'message'=>'Refund not found.'
+
+            ],404);
+
+        }
+
+
+
+
+
+        $refund->load([
+
+            'airline',
+
+            'tickets',
+
+            'attachments',
+
+            'statusLogs.user',
+
+            'assignee'
+
+        ]);
+
+
+
+        return response()->json([
+
+            'success'=>true,
+
+            'refund'=>$refund
+
+        ]);
+
+    }
+    
+
 }

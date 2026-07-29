@@ -2,17 +2,38 @@
 
 namespace App\Enums;
 
-enum TicketStatus:string
+enum TicketStatus: string
 {
-    case ACTIVE = 'ACTIVE';
+    case PENDING = 'PENDING';
 
-    case FLOWN = 'FLOWN';
+    case CONFIRMED = 'CONFIRMED';
 
     case CANCELLED = 'CANCELLED';
 
-    case NO_SHOW = 'NO_SHOW';
+    case USED = 'USED';
 
     case REFUNDED = 'REFUNDED';
 
-    case EXPIRED = 'EXPIRED';
+
+    public function label(): string
+    {
+        return match ($this) {
+
+            self::PENDING =>
+                'Pending',
+
+            self::CONFIRMED =>
+                'Confirmed',
+
+            self::CANCELLED =>
+                'Cancelled',
+
+            self::USED =>
+                'Used',
+
+            self::REFUNDED =>
+                'Refunded',
+
+        };
+    }
 }

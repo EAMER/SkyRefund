@@ -2,45 +2,40 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\AccountType;
 use App\Enums\AttachmentType;
+use App\Enums\RefundReason;
+use App\Enums\RefundType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
 class StoreRefundRequest extends FormRequest
 {
     /**
-     * Prepare the data for validation.
+     * Prepare request data.
      */
     protected function prepareForValidation(): void
     {
-        // Uncomment only when debugging
-        /*
-        dd([
-            'all' => $this->all(),
-            'files' => $this->allFiles(),
-            'content_type' => $this->header('Content-Type'),
-        ]);
-        */
-
-        // Convert checkbox value to boolean
         if ($this->has('consent')) {
+
             $this->merge([
-                'consent' => filter_var($this->input('consent'), FILTER_VALIDATE_BOOLEAN),
+                'consent' => filter_var(
+                    $this->input('consent'),
+                    FILTER_VALIDATE_BOOLEAN
+                ),
             ]);
         }
     }
 
-    /**
-     * Determine if the user is authorized.
-     */
+
+
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Validation rules.
-     */
+
+
     public function rules(): array
     {
         return [
@@ -51,43 +46,109 @@ class StoreRefundRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'airline_id' => ['required', 'exists:airlines,id'],
 
-            'first_name' => ['required', 'string', 'max:255'],
+            'airline_id' => [
+                'required',
+                'exists:airlines,id'
+            ],
 
-            'last_name' => ['required', 'string', 'max:255'],
 
-            'email' => ['required', 'email'],
+            'first_name' => [
+                'required',
+                'string',
+                'max:255'
+            ],
 
-            'phone' => ['required', 'string', 'max:30'],
 
-            'address' => ['nullable', 'string'],
+            'last_name' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+
+
+            'email' => [
+                'required',
+                'email',
+                'max:255'
+            ],
+
+
+            'phone' => [
+                'required',
+                'string',
+                'max:30'
+            ],
+
+
+            'address' => [
+                'nullable',
+                'string'
+            ],
+
+
 
             /*
             |--------------------------------------------------------------------------
-            | Refund
+            | Refund Information
             |--------------------------------------------------------------------------
             */
 
-            'refund_reason' => ['required', 'string'],
 
-            'refund_type' => ['required', 'string'],
+            'refund_reason' => [
+                'required',
+                new Enum(RefundReason::class)
+            ],
 
-            'passenger_explanation' => ['required', 'string'],
+
+            'refund_type' => [
+                'required',
+                new Enum(RefundType::class)
+            ],
+
+
+            'passenger_explanation' => [
+                'required',
+                'string',
+                'min:20'
+            ],
+
+
 
             /*
             |--------------------------------------------------------------------------
-            | Bank
+            | Bank Information
             |--------------------------------------------------------------------------
             */
 
-            'bank_name' => ['required', 'string'],
 
-            'account_name' => ['required', 'string'],
+            'bank_name' => [
+                'required',
+                'string',
+                'max:255'
+            ],
 
-            'account_number' => ['required', 'string', 'max:30'],
 
-            'account_type' => ['required', 'string'],
+            'account_name' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+
+
+            'account_number' => [
+                'required',
+                'string',
+                'max:30'
+            ],
+
+
+            'account_type' => [
+                'required',
+                new Enum(AccountType::class)
+            ],
+
+
 
             /*
             |--------------------------------------------------------------------------
@@ -95,7 +156,13 @@ class StoreRefundRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'consent' => ['required', 'boolean'],
+
+            'consent' => [
+                'required',
+                'boolean'
+            ],
+
+
 
             /*
             |--------------------------------------------------------------------------
@@ -103,23 +170,69 @@ class StoreRefundRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'tickets' => ['required', 'array', 'min:1'],
 
-            'tickets.*.booking_reference' => ['required', 'string'],
+            'tickets' => [
+                'required',
+                'array',
+                'min:1'
+            ],
 
-            'tickets.*.ticket_number' => ['required', 'string'],
 
-            'tickets.*.passenger_name' => ['required', 'string'],
+            'tickets.*.booking_reference' => [
+                'required',
+                'string',
+                'max:100'
+            ],
 
-            'tickets.*.flight_number' => ['required', 'string'],
 
-            'tickets.*.airline_code' => ['required', 'string'],
+            'tickets.*.ticket_number' => [
+                'required',
+                'string',
+                'max:100'
+            ],
 
-            'tickets.*.origin_airport' => ['required', 'string'],
 
-            'tickets.*.destination_airport' => ['required', 'string'],
+            'tickets.*.passenger_name' => [
+                'required',
+                'string',
+                'max:255'
+            ],
 
-            'tickets.*.departure_datetime' => ['required', 'date'],
+
+            'tickets.*.flight_number' => [
+                'required',
+                'string',
+                'max:50'
+            ],
+
+
+            'tickets.*.airline_code' => [
+                'required',
+                'string',
+                'max:10'
+            ],
+
+
+            'tickets.*.origin_airport' => [
+                'required',
+                'string',
+                'max:10'
+            ],
+
+
+            'tickets.*.destination_airport' => [
+                'required',
+                'string',
+                'max:10'
+            ],
+
+
+            'tickets.*.departure_datetime' => [
+                'required',
+                'date'
+            ],
+
+
 
             /*
             |--------------------------------------------------------------------------
@@ -127,41 +240,53 @@ class StoreRefundRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'attachments' => ['nullable', 'array'],
 
-            'attachments.*' => [
+            'attachments' => [
                 'nullable',
-                'file',
-                'max:10240', // 10MB
+                'array'
             ],
 
-            'attachment_types' => ['nullable', 'array'],
+
+            'attachments.*' => [
+                'file',
+                'max:10240'
+            ],
+
+
+            'attachment_types' => [
+                'nullable',
+                'array'
+            ],
+
 
             'attachment_types.*' => [
                 'required_with:attachments',
-                new Enum(AttachmentType::class),
+                new Enum(AttachmentType::class)
             ],
         ];
     }
 
-    /**
-     * Custom validation messages.
-     */
+
+
     public function messages(): array
     {
         return [
-            'attachments.array' => 'Attachments must be an array.',
 
-            'attachments.*.file' => 'Each attachment must be a valid file.',
+            'consent.required' =>
+                'You must accept the consent.',
 
-            'attachments.*.max' => 'Each attachment must not exceed 10MB.',
 
-            'attachment_types.array' => 'Attachment types must be an array.',
+            'tickets.required' =>
+                'At least one ticket is required.',
+
+
+            'attachments.*.max' =>
+                'Each attachment cannot exceed 10MB.',
+
 
             'attachment_types.*.required_with' =>
-                'Each attachment must have a corresponding attachment type.',
+                'Every attachment must have a type.',
 
-            'consent.required' => 'You must accept the consent.',
         ];
     }
 }

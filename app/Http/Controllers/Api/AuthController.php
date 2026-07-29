@@ -9,77 +9,210 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+
+
     /**
-     * Login.
+     * Login user.
      */
     public function login(LoginRequest $request)
     {
-        if (! Auth::attempt($request->only('email', 'password'))) {
+
+
+        if (
+            ! Auth::attempt(
+                $request->only(
+                    'email',
+                    'password'
+                )
+            )
+        ) {
 
             return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials.',
-            ], 401);
+
+                'success'=>false,
+
+                'message'=>'Invalid credentials.'
+
+            ],401);
 
         }
+
+
+
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Active Account Check
+        |--------------------------------------------------------------------------
+        */
+
+
         if (! $user->active) {
 
+
+            $user
+                ->tokens()
+                ->delete();
+
+
             return response()->json([
-                'success' => false,
-                'message' => 'Your account has been disabled.',
-            ], 403);
+
+                'success'=>false,
+
+                'message'=>'Your account has been disabled.'
+
+            ],403);
+
 
         }
 
-        $token = $user->createToken('SkyRefund')->plainTextToken;
+
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Single Session
+        |--------------------------------------------------------------------------
+        */
+
+
+        $user
+            ->tokens()
+            ->delete();
+
+
+
+
+
+        $token =
+            $user
+            ->createToken(
+                'SkyRefund'
+            )
+            ->plainTextToken;
+
+
+
+
 
         return response()->json([
 
-            'success' => true,
+            'success'=>true,
 
-            'message' => 'Login successful.',
+            'message'=>'Login successful.',
 
-            'token' => $token,
 
-            'user' => $user,
+            'token'=>$token,
+
+
+            'user'=>$this->userResponse($user)
 
         ]);
+
     }
 
+
+
+
+
     /**
-     * Logout.
+     * Logout current token.
      */
     public function logout(Request $request)
     {
-        $request
+
+
+        $token =
+            $request
             ->user()
-            ->currentAccessToken()
-            ->delete();
+            ?->currentAccessToken();
+
+
+
+        if($token){
+
+            $token->delete();
+
+        }
+
+
 
         return response()->json([
 
-            'success' => true,
+            'success'=>true,
 
-            'message' => 'Logged out successfully.',
+            'message'=>'Logged out successfully.'
 
         ]);
+
     }
 
+
+
+
+
     /**
-     * Current user.
+     * Current authenticated user.
      */
     public function me(Request $request)
     {
+
         return response()->json([
 
-            'success' => true,
+            'success'=>true,
 
-            'user' => $request->user(),
+            'user'=>
+                $this->userResponse(
+                    $request->user()
+                )
 
         ]);
+
     }
+
+
+
+
+
+    /**
+     * User API response format.
+     */
+    private function userResponse($user): array
+    {
+
+        return [
+
+            'id'=>$user->id,
+
+            'name'=>$user->name,
+
+            'email'=>$user->email,
+
+
+            'role'=>
+                $user->role?->value,
+
+
+            'department'=>
+                $user->department?->value,
+
+
+            'airline_id'=>
+                $user->airline_id,
+
+
+            'active'=>
+                $user->active,
+
+        ];
+
+    }
+
 }
