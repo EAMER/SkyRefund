@@ -16,5 +16,19 @@ jobs:
           extensions: mbstring, pdo, pdo_sqlite, sqlite3
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
+      - name: Copy .env
+        run: cp .env.example .env
+      - name: Generate application key
+        run: php artisan key:generate
+      - name: Create SQLite database
+        run: touch database/database.sqlite
+      - name: Run migrations
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan migrate --force
       - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
         run: php artisan test
