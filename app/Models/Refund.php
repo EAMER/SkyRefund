@@ -98,6 +98,8 @@ class Refund extends Model
 
         'consent',
         'admin_notes',
+        'payment_reference',
+        'paid_at',
     ];
 
     /**
@@ -128,6 +130,8 @@ class Refund extends Model
             'ai_processed_at' => 'datetime',
 
             'consent' => 'boolean',
+
+            'paid_at' => 'datetime',
         ];
     }
 
@@ -179,6 +183,12 @@ class Refund extends Model
         );
     }
 
+    public function queries(): HasMany
+    {
+        return $this->hasMany(
+            RefundQuery::class
+        );
+    }
     public function statusLogs(): HasMany
     {
         return $this->hasMany(

@@ -12,7 +12,9 @@ const statusMessage = document.getElementById("statusMessage");
 
 const submitBtn = document.getElementById("submitBtn");
 const backToWelcome = document.getElementById("backToWelcome");
-
+const successSection = document.getElementById("successSection");
+const successReference = document.getElementById("successReference");
+const backToHomeBtn = document.getElementById("backToHomeBtn");
 // Summary
 
 const summaryAirline = document.getElementById("summaryAirline");
@@ -168,10 +170,20 @@ backToWelcome.addEventListener("click", function () {
 
 });
 
+function showSuccessSection(reference) {
+    successReference.textContent = reference;
+
+    welcomeSection.classList.add("hidden");
+    refundSection.classList.add("hidden");
+    successSection.classList.remove("hidden");
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
 // ======================================================
 // STATUS MESSAGE
 // ======================================================
+
 
 function showMessage(message, success = true) {
 
@@ -182,6 +194,11 @@ function showMessage(message, success = true) {
         : "error";
 
 }
+
+backToHomeBtn.addEventListener("click", function () {
+    successSection.classList.add("hidden");
+    welcomeSection.classList.remove("hidden");
+});
 // ======================================================
 // DYNAMIC TICKETS
 // ======================================================
@@ -435,48 +452,37 @@ const response = await fetch(
     }
 );
 
-const result = await response.json();
+let result;
+try {
+    result = await response.json();
+} catch (parseError) {
+    console.error("Response wasn't valid JSON:", parseError);
+    showMessage("Server returned an unexpected response. Check the backend logs.", false);
+    return;
+}
 
 console.log("Status:", response.status);
 console.log("Result:", result);
 
-if (!response.ok) {
-    alert(result.error || result.message);
+// ==========================
+// SUCCESS
+// ==========================
+if (response.ok) {
+
+    refundForm.reset();
+    welcomeForm.reset();
+
+    ticketIndex = 1;
+    document
+        .querySelectorAll("#ticketsContainer .ticket-card")
+        .forEach((card, index) => {
+            if (index > 0) card.remove();
+        });
+
+        showSuccessSection(result.reference);
+        
+    return;
 }
-        // ==========================
-        // SUCCESS
-        // ==========================
-
-        if (response.ok) {
-
-            showMessage(
-                `Refund submitted successfully! Reference: ${result.reference}`,
-                true
-            );
-
-            refundForm.reset();
-
-            welcomeForm.reset();
-
-            refundSection.classList.add("hidden");
-
-            welcomeSection.classList.remove("hidden");
-
-            ticketIndex = 1;
-
-            // Remove dynamically-added tickets
-            document
-                .querySelectorAll("#ticketsContainer .ticket-card")
-                .forEach((card, index) => {
-
-                    if (index > 0) {
-                        card.remove();
-                    }
-
-                });
-
-            return;
-        }
 
         // ==========================
         // VALIDATION ERRORS (422)

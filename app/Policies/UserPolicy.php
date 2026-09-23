@@ -20,4 +20,10 @@ class UserPolicy
     {
         return $user->isSuperAdmin();
     }
+
+    public function create(User $user): bool
+    {
+    return $user->isSuperAdmin();
+    }
+    
 }

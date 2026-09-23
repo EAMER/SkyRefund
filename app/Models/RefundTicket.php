@@ -50,6 +50,22 @@ class RefundTicket extends Model
 
         'remarks',
 
+        'nuc',
+
+        'government_tax_ng',
+
+        'security_tax_yq',
+
+        'airport_tax_qt',
+
+        'insurance',
+
+        'is_no_show',
+
+        'no_show_fee',
+
+        'total_deduction',
+
     ];
 
 
@@ -75,6 +91,31 @@ class RefundTicket extends Model
 
             'ticket_status' =>
                 TicketStatus::class,
+
+
+            'nuc' =>
+                'decimal:2',
+
+            'government_tax_ng' =>
+                'decimal:2',
+
+            'security_tax_yq' =>
+                'decimal:2',
+
+            'airport_tax_qt' =>
+                'decimal:2',
+
+            'insurance' =>
+                'decimal:2',
+
+            'is_no_show' =>
+                'boolean',
+
+            'no_show_fee' =>
+                'decimal:2',
+
+            'total_deduction' =>
+                'decimal:2',
 
         ];
     }
@@ -125,6 +166,25 @@ class RefundTicket extends Model
     public function route(): string
     {
         return "{$this->origin_airport} → {$this->destination_airport}";
+    }
+
+
+    /**
+     * Recomputes total_deduction and refund_amount from the entered tax/fee
+     * fields. Call this before saving whenever the officer's calculation
+     * inputs change (nuc, taxes, insurance, no-show fee) — never trust a
+     * client-supplied total_deduction or refund_amount directly.
+     */
+    public function recalculateDeduction(): void
+    {
+        $this->total_deduction = (float) $this->nuc
+            + (float) $this->government_tax_ng
+            + (float) $this->security_tax_yq
+            + (float) $this->airport_tax_qt
+            + (float) $this->insurance
+            + ($this->is_no_show ? (float) $this->no_show_fee : 0);
+
+        $this->refund_amount = max(0, (float) $this->fare_paid - $this->total_deduction);
     }
 
 

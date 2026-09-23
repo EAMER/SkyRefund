@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Log;
 
 class UserManagementController extends Controller
 {
@@ -21,23 +23,24 @@ class UserManagementController extends Controller
     public function index(Request $request)
     {
         $admin = $request->user();
-
+    
         abort_unless($admin->can('viewAny', User::class), 403);
-
-        $query = User::query()->select([
-            'id', 'name', 'email', 'airline_id', 'department', 'role', 'active', 'created_at',
-        ]);
-
+    
+        $query = User::query()
+            ->with('airline:id,name')
+            ->select([
+                'id', 'name', 'email', 'airline_id', 'department', 'role', 'active', 'created_at',
+            ]);
+    
         if (! $admin->isSuperAdmin()) {
             $query->where('airline_id', $admin->airline_id);
         }
-
+    
         return response()->json([
             'success' => true,
             'data' => $query->orderBy('name')->get(),
         ]);
     }
-
 
     /**
      * Update a user's role and/or department.
@@ -113,7 +116,25 @@ class UserManagementController extends Controller
         ]);
     }
 
+    // UserManagementController.php
+public function airlines(Request $request)
+{
+    $admin = $request->user();
 
+    if ($admin->isSuperAdmin()) {
+        $airlines = \App\Models\Airline::select('id', 'name')->orderBy('name')->get();
+    } else {
+        $airlines = \App\Models\Airline::where('id', $admin->airline_id)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+    }
+
+    return response()->json([
+        'success' => true,
+        'data' => $airlines,
+    ]);
+}
     /**
      * Read-only audit feed: refund status changes and ticket amount
      * adjustments, optionally filtered by the user who made them.
@@ -147,4 +168,38 @@ class UserManagementController extends Controller
             'amount_changes' => $amountLogs,
         ]);
     }
+public function store(Request $request)
+{
+    $admin = $request->user();
+
+    abort_unless($admin->can('create', User::class), 403);
+
+    // Temporary debug: log incoming payload to help diagnose missing airline_id
+    Log::info('Admin create-user payload', $request->all());
+
+    $data = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'unique:users,email'],
+        'password' => ['required', Password::min(8)],
+        'role' => ['required', new Enum(UserRole::class)],
+        'department' => ['nullable', new Enum(Department::class)],
+        'airline_id' => ['required', 'exists:airlines,id'],
+    ]);
+
+    $user = User::create([
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'password' => Hash::make($data['password']),
+        'role' => $data['role'],
+        'department' => $data['department'] ?? null,
+        'airline_id' => $data['airline_id'],
+        'active' => true,
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'User created.',
+        'user' => $user,
+    ], 201);
+}
 }

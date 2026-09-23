@@ -14,6 +14,7 @@ Route::get('/admin', function () {
 Route::get('/frontend', function () {
     return view('frontend.index');
 });
+ 
 
 Route::get('/portal', [PortalController::class, 'show']);
 Route::post('/portal/{refund}/upload', [PortalController::class, 'upload'])->name('passenger.upload');

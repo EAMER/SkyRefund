@@ -34,24 +34,24 @@ class RefundPolicy
 
 
     public function approve(User $user, Refund $refund): bool
-{
-    if (! $this->sameTenant($user, $refund)) {
-        return false;
-    }
+    {
+        if (! $this->sameTenant($user, $refund)) {
+            return false;
+        }
 
-    if ($user->hasRole(UserRole::SUPER_ADMIN)) {
-        return true;
-    }
+        if ($user->hasRole(UserRole::SUPER_ADMIN)) {
+            return true;
+        }
 
-    return match ($refund->current_department) {
-        Department::REFUND => $user->hasRole(UserRole::REFUND_OFFICER),
-        Department::COMMERCIAL => $user->hasRole(UserRole::COMMERCIAL),
-        Department::AUDIT => $user->hasRole(UserRole::AUDIT),
-        Department::FINANCE => $user->hasRole(UserRole::FINANCE),
-        Department::TREASURY => $user->hasRole(UserRole::TREASURY),
-        default => false,
-    };
-}
+        return match ($refund->current_department) {
+            Department::REFUND => $user->hasRole(UserRole::REFUND_OFFICER),
+            Department::COMMERCIAL => $user->hasRole(UserRole::COMMERCIAL),
+            Department::AUDIT => $user->hasRole(UserRole::AUDIT),
+            Department::FINANCE => $user->hasRole(UserRole::FINANCE),
+            Department::TREASURY => $user->hasRole(UserRole::TREASURY),
+            default => false,
+        };
+    }
 
 
     public function reject(User $user, Refund $refund): bool
@@ -95,19 +95,61 @@ class RefundPolicy
             );
     }
 
-    public function updateTicketAmount(User $user, Refund $refund): bool
-{
-    return $this->approve($user, $refund);
-}
 
-    public function updateDepartment(User $user, Refund $refund): bool
+    public function updateTicketAmount(User $user, Refund $refund): bool
     {
         return $this->approve($user, $refund);
+    }
+
+
+    /**
+     * Manual admin override — bypasses the normal status-driven workflow,
+     * so this is intentionally NOT the same gate as approve(). Only
+     * SUPER_ADMIN may reassign a refund's department directly.
+     */
+    public function updateDepartment(User $user, Refund $refund): bool
+    {
+        return $this->sameTenant($user, $refund)
+            && $user->hasRole(UserRole::SUPER_ADMIN);
     }
 
 
     public function updateNotes(User $user, Refund $refund): bool
     {
         return $this->approve($user, $refund);
+    }
+
+
+    public function submitCalculation(User $user, Refund $refund): bool
+    {
+        return $this->sameTenant($user, $refund)
+            && (
+                $user->hasRole(UserRole::SUPER_ADMIN)
+                || $user->hasRole(UserRole::REFUND_OFFICER)
+            );
+    }
+
+    public function view(User $user, Refund $refund): bool
+        {
+            return $this->sameTenant($user, $refund);
+            }
+
+    public function raiseQuery(User $user, Refund $refund): bool
+        {
+            return $this->sameTenant($user, $refund);
+        }
+        
+
+    /**
+     * Uploading supporting documents is officer work (initial review and
+     * post-return correction), same gate as submitCalculation.
+     */
+    public function uploadAttachment(User $user, Refund $refund): bool
+    {
+        return $this->sameTenant($user, $refund)
+            && (
+                $user->hasRole(UserRole::SUPER_ADMIN)
+                || $user->hasRole(UserRole::REFUND_OFFICER)
+            );
     }
 }

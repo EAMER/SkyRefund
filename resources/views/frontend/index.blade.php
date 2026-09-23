@@ -10,6 +10,10 @@
 
     <title>SkyRefund</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet"
         href="{{ asset('css/styles.css') }}">
 
@@ -25,8 +29,9 @@
 
     <div class="page-header">
 
-        <img src="{{ asset('images/logo.png') }}"
-            alt="SkyRefund Logo">
+        <img src="{{ asset('image/Refunlogo.jpg') }}"
+            alt="SkyRefund Logo"
+            class="logo brand-mark">
 
         <p class="eyebrow">
             Sky Refund
@@ -37,11 +42,40 @@
         </h1>
 
         <p>
-            Start with your airline and contact information,
-            then continue to the refund page to submit your
-            refund request and supporting documents.
+            Submit a new refund request, or track one you've already
+            sent in using your reference number and email.
         </p>
 
+    </div>
+
+    <!-- ===========================
+            MODE TOGGLE (new — purely
+            navigational, doesn't touch
+            any existing form logic)
+    ============================ -->
+
+    <div class="mode-toggle">
+
+        <button type="button" id="modeSubmitBtn" class="active">
+            Submit a Request
+        </button>
+
+        <button type="button" id="modeTrackBtn">
+            Track Your Refund
+        </button>
+
+    </div>
+
+    <!-- ===========================
+            SUBMIT FLOW WRAPPER
+    ============================ -->
+
+    <div id="submitFlow">
+
+    <div class="step-indicator" id="stepIndicator">
+        <span class="dot active" data-step="1"></span>
+        <span class="line"></span>
+        <span class="dot" data-step="2"></span>
     </div>
 
     <!-- ===========================
@@ -162,7 +196,7 @@
 
             <p>
 
-                <strong>Airline:</strong>
+                <strong>Airline</strong>
 
                 <span id="summaryAirline"></span>
 
@@ -170,7 +204,7 @@
 
             <p>
 
-                <strong>Name:</strong>
+                <strong>Name</strong>
 
                 <span id="summaryName"></span>
 
@@ -178,7 +212,7 @@
 
             <p>
 
-                <strong>Email:</strong>
+                <strong>Email</strong>
 
                 <span id="summaryEmail"></span>
 
@@ -186,7 +220,7 @@
 
             <p>
 
-                <strong>Phone:</strong>
+                <strong>Phone</strong>
 
                 <span id="summaryPhone"></span>
 
@@ -194,7 +228,7 @@
 
             <p>
 
-                <strong>Address:</strong>
+                <strong>Address</strong>
 
                 <span id="summaryAddress"></span>
 
@@ -618,9 +652,132 @@
 
     <div id="statusMessage"></div>
 
+    </div><!-- /#submitFlow -->
+    
+    <section id="successSection" class="hidden">
+
+    <div class="success-icon">✓</div>
+
+    <h2>Refund Request Submitted</h2>
+
+    <p class="success-subtitle">
+        Thank you, we've received your request and it's now being reviewed.
+    </p>
+
+    <div class="reference-box">
+        <span>Your Reference Number</span>
+        <strong id="successReference">—</strong>
+    </div>
+
+    <div class="next-steps">
+        <h3>What happens next?</h3>
+        <ol>
+            <li>Our team will review your submitted documents within <strong>2–3 business days</strong>.</li>
+            <li>You'll receive an email at the address you provided with updates on your refund status.</li>
+            <li>If anything is missing or unclear, we'll reach out using the contact details you supplied.</li>
+            <li>Once approved, refunds are typically processed within <strong>7–14 business days</strong>.</li>
+        </ol>
+    </div>
+
+    <div class="contact-info">
+        <h3>Need help?</h3>
+        <p>Email us at <a href="mailto:support@skyrefund.com">support@skyrefund.com</a></p>
+        <p>Or call <a href="tel:+2340000000000">+234 000 000 0000</a></p>
+    </div>
+
+    <button id="backToHomeBtn" class="primary">Back to Home</button>
+
+</section>
+    <!-- ===========================
+            TRACK YOUR REFUND (new)
+    ============================ -->
+
+    <div id="trackFlow" class="form-section hidden">
+
+        <h2>Track Your Refund</h2>
+
+        <form id="trackForm">
+
+            <label for="track_reference">Reference Number</label>
+
+            <input
+                type="text"
+                id="track_reference"
+                name="reference"
+                placeholder="SR-20260101-000123"
+                required>
+
+            <label for="track_email">Email Address</label>
+
+            <input
+                type="email"
+                id="track_email"
+                name="email"
+                placeholder="The email you submitted your request with"
+                required>
+
+            <div class="button-row">
+
+                <button type="submit" id="trackSubmitBtn">
+                    Check Status
+                </button>
+
+            </div>
+
+        </form>
+
+        <div id="trackResult" class="track-result hidden">
+
+            <div class="track-status-banner">
+                <div>
+                    <div class="ref" id="trackRefLabel"></div>
+                </div>
+                <span class="track-status-pill" id="trackStatusPill"></span>
+            </div>
+
+            <h3 style="margin-top: 0;">Progress</h3>
+            <ul class="track-timeline" id="trackTimeline"></ul>
+
+            <h3>Tickets</h3>
+            <div class="track-ticket-list" id="trackTickets"></div>
+
+            <h3>Attachments</h3>
+            <div class="track-attachments" id="trackAttachments"></div>
+
+            <h3>Add More Documents</h3>
+
+            <form id="trackUploadForm" enctype="multipart/form-data">
+
+                <label for="track_upload_files">Choose file(s)</label>
+                <input type="file" id="track_upload_files" multiple accept=".jpg,.jpeg,.png,.pdf">
+
+                <label for="track_upload_type">Document type</label>
+                <select id="track_upload_type">
+                    <option value="other">Other</option>
+                    <option value="signature">Signature</option>
+                    <option value="passenger_id">Passenger ID</option>
+                    <option value="account_holder_id">Account Holder ID</option>
+                    <option value="authorization_letter">Authorization Letter</option>
+                </select>
+
+                <div class="button-row">
+                    <button type="submit" id="trackUploadBtn">Upload Document(s)</button>
+                </div>
+
+            </form>
+
+            <div id="trackUploadMessage"></div>
+
+        </div>
+
+        <div id="trackMessage"></div>
+
+    </div><!-- /#trackFlow -->
+
 </div>
 
 <script src="{{ asset('js/app.js') }}"></script>
+<script src="{{ asset('js/track.js') }}"></script>
 
 </body>
 

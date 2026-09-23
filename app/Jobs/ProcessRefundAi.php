@@ -29,16 +29,12 @@ class ProcessRefundAi implements ShouldQueue
     public int $backoff = 120;
 
 
-    /**
-     * Send AI tasks to dedicated queue.
-     */
-    public string $queue = 'ai-processing';
-
-
 
     public function __construct(
         protected Refund $refund
     ) {
+        // Send AI tasks to a dedicated queue.
+        $this->onQueue('ai-processing');
     }
 
 

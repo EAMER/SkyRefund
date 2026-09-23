@@ -5,8 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Admin\RefundQueryController;
 use App\Http\Controllers\Api\RefundController as ApiRefundController;
 use App\Http\Controllers\Api\AirlineController;
+use App\Http\Controllers\Api\RefundLookupController;
 use App\Http\Controllers\Admin\RefundAttachmentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\RefundController as AdminRefundController;
@@ -41,7 +43,17 @@ Route::prefix('v1')->group(function () {
         [AirlineController::class, 'index']
     );
 
-    
+    Route::post(
+        '/refunds/lookup',
+        [RefundLookupController::class, 'show']
+    )->middleware('throttle:20,1');
+
+    Route::post(
+        '/refunds/lookup/attachments',
+        [RefundLookupController::class, 'uploadDocument']
+    )->middleware('throttle:10,1');
+
+
     /*
     |--------------------------------------------------------------------------
     | Passenger Refund Submission
@@ -53,7 +65,6 @@ Route::prefix('v1')->group(function () {
         '/refunds',
         [ApiRefundController::class, 'store']
     );
-
 
 
     /*
@@ -70,7 +81,6 @@ Route::prefix('v1')->group(function () {
             '/login',
             [AuthController::class, 'login']
         );
-
 
 
         /*
@@ -131,16 +141,24 @@ Route::prefix('v1')->group(function () {
                 '/refunds/{refund}',
                 [AdminRefundController::class, 'show']
             );
-            
+
             Route::get(
                 '/refunds/{refund}/attachments/{attachment}',
                 [RefundAttachmentController::class, 'show']
-);
+            );
+
+            Route::post(
+                '/refunds/{refund}/attachments',
+                [RefundActionController::class, 'uploadAttachments']
+            );
+
             Route::get('/users', [UserManagementController::class, 'index']);
             Route::patch('/users/{user}/role', [UserManagementController::class, 'updateRole']);
             Route::patch('/users/{user}/toggle-active', [UserManagementController::class, 'toggleActive']);
             Route::post('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword']);
             Route::get('/audit-log', [UserManagementController::class, 'auditLog']);
+            Route::post('/users', [UserManagementController::class, 'store']);
+            Route::get('/airlines', [UserManagementController::class, 'airlines']);
 
             /*
             |--------------------------------------------------------------------------
@@ -155,6 +173,8 @@ Route::prefix('v1')->group(function () {
             )
             ->middleware('role:SUPER_ADMIN');
 
+            Route::post('/refunds/{refund}/tickets/calculation/draft', [RefundActionController::class, 'saveCalculationDraft']);
+            Route::post('/refunds/{refund}/tickets/calculation/submit', [RefundActionController::class, 'submitCalculation']);
 
             Route::patch(
                 '/refunds/{refund}/approve',
@@ -188,6 +208,20 @@ Route::prefix('v1')->group(function () {
                 [RefundActionController::class, 'complete']
             );
 
+            Route::get(
+                '/refunds/{refund}/queries',
+                [RefundQueryController::class, 'index']
+            );
+
+            Route::post(
+                '/refunds/{refund}/queries',
+                [RefundQueryController::class, 'store']
+            );
+
+            Route::patch(
+                '/refunds/{refund}/queries/{query}/resolve',
+                [RefundQueryController::class, 'resolve']
+            );
 
 
             /*
